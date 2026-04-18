@@ -1,3 +1,11 @@
+## 1.0.1
+
+- Improved pub.dev score and documentation.
+- **Added Example**: Full functioning example in `example/` directory.
+- **Improved Documentation**: Added missing dartdoc comments for public API members (`LogPilotMcpServer`, `deduplicateRecords`, `lastEntryId`, `levelIndex`, `parseEntries`).
+- **Visuals**: Added package banner and thumbnail via `screenshots` metadata.
+- **Bugfixes**: Resolved secondary analyzer warnings in example code.
+
 ## 1.0.0
 
 Initial stable release.

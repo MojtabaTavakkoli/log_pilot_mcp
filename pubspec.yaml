@@ -11,8 +11,11 @@ topics:
   - mcp
   - logging
   - debug
-  - developer-tools
   - ai-agents
+
+screenshots:
+  - description: 'LogPilot MCP Server - exposing Flutter app state to AI agents'
+    path: screenshots/banner.png
 
 environment:
   sdk: ^3.9.2

@@ -37,7 +37,7 @@ base class LogPilotMcpServer extends MCPServer
   }) : super.fromStreamChannel(
           implementation: Implementation(
             name: 'log_pilot_mcp',
-            version: '1.0.0',
+            version: '1.0.1',
           ),
           instructions: '''
 LogPilot MCP server — exposes a running Flutter app's LogPilot logging state.

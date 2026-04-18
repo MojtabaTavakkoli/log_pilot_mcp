@@ -29,6 +29,7 @@ import 'package:vm_service/vm_service_io.dart';
 /// ```
 base class LogPilotMcpServer extends MCPServer
     with ToolsSupport, ResourcesSupport, LoggingSupport {
+  /// Creates a new instance of [LogPilotMcpServer].
   LogPilotMcpServer(
     super.channel, {
     required this.vmServiceUri,
@@ -1115,6 +1116,7 @@ The server auto-reconnects on hot restart and isolate recycle.
   static String _escapeForEval(String s) =>
       s.replaceAll(r'\', r'\\').replaceAll("'", r"\'").replaceAll(r'$', r'\$');
 
+  /// Returns a numeric index for comparing log [level] severity.
   static int levelIndex(String level) => switch (level.toLowerCase()) {
         'verbose' => 0,
         'debug' => 1,
@@ -1125,6 +1127,7 @@ The server auto-reconnects on hot restart and isolate recycle.
         _ => -1,
       };
 
+  /// Parses raw JSON or string entries into a list of generic maps.
   static List<Map<String, dynamic>> parseEntries(List<dynamic> entries) =>
       entries
           .map((e) =>
@@ -1132,9 +1135,11 @@ The server auto-reconnects on hot restart and isolate recycle.
                   as Map<String, dynamic>)
           .toList();
 
+  /// Returns a semi-unique identifier for an [entry] based on timestamp, message, and level.
   static String lastEntryId(Map<String, dynamic> entry) =>
       '${entry['timestamp']}|${entry['message']}|${entry['level']}';
 
+  /// Collapses consecutive identical log [records] into a single entry with a count.
   static List<Map<String, dynamic>> deduplicateRecords(
     List<Map<String, dynamic>> records,
   ) {

@@ -1,0 +1,14 @@
+name: example
+description: An example demonstrating how to use log_pilot_mcp.
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.0.0'
+
+dependencies:
+  log_pilot_mcp:
+    path: ../
+  dart_mcp: ^0.5.0
+
+dev_dependencies:
+  lints: ^5.0.0

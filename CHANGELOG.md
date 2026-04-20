@@ -1,3 +1,24 @@
+## 1.1.0-beta.1
+
+Beta release focused on documentation quality and discoverability.
+
+### Docs: README Restructure
+
+- **Moved "Dart MCP vs LogPilot MCP"** disambiguation table from the bottom
+  to directly after "How It Works" — answers the first question new users have.
+- **Added "Recommended Debugging Workflow"** (6-step guide) so agents reading
+  only this README get the same guidance that was previously only in the
+  `log_pilot` README.
+- **De-emphasized the dev-dependency Windows Cursor config** — collapsed the
+  15-line JSON example into a one-line description since global activation
+  (shown above it) avoids the complexity entirely.
+- **Added fragility warning to Flutter Web helper scripts** — the bash/PowerShell
+  one-liners parse `flutter run` console output and may break across SDK versions.
+- **Recommended manual URI copy as the primary Flutter Web approach**, with
+  the helper scripts as an optional automation.
+
+---
+
 ## 1.0.1
 
 - Improved pub.dev score and documentation.

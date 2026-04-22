@@ -27,6 +27,7 @@ log_pilot_mcp/
 ```
 bin/log_pilot_mcp.dart   — CLI entrypoint
   ├─ arg parsing         — --vm-service-uri, --vm-service-uri-file, --project-root, --help
+  ├─ write-uri command   — writes URI to .dart_tool/ for Android/iOS workflows
   ├─ auto-discovery      — locates .dart_tool/log_pilot_vm_service_uri
   ├─ file watcher        — watches URI file for changes (reconnect on app restart)
   └─ server bootstrap    — creates LogPilotMcpServer with stdio channel

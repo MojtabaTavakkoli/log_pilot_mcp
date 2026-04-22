@@ -37,7 +37,7 @@ base class LogPilotMcpServer extends MCPServer
   }) : super.fromStreamChannel(
           implementation: Implementation(
             name: 'log_pilot_mcp',
-            version: '1.0.1',
+            version: '1.1.0',
           ),
           instructions: '''
 LogPilot MCP server — exposes a running Flutter app's LogPilot logging state.
@@ -279,13 +279,45 @@ The server auto-reconnects on hot restart and isolate recycle.
         msg.contains('stream sink');
   }
 
+  /// Wraps [e] with a user-friendly message when the raw error would be
+  /// cryptic. Returns [e] unchanged if no better description is available.
+  Object _friendlyError(Object e) {
+    if (e is RPCError) {
+      if (e.code == -32601 || e.message.contains('Unknown method')) {
+        return StateError(
+          'VM service not responding (${e.message}). '
+          'The app may have restarted or the URI is stale. '
+          'If running on Android/iOS, use: '
+          'log_pilot_mcp write-uri <new_ws_uri>',
+        );
+      }
+      if (e.message.contains('Isolate') || e.message.contains('isolate')) {
+        return StateError(
+          'Target isolate unavailable (${e.message}). '
+          'The app may be restarting — try again in a moment.',
+        );
+      }
+    }
+    final msg = e.toString().toLowerCase();
+    if (msg.contains('websocket') || msg.contains('connection refused')) {
+      return StateError(
+        'Cannot connect to VM service at $vmServiceUri. '
+        'Is the Flutter app running in debug mode? '
+        'Original error: $e',
+      );
+    }
+    return e;
+  }
+
   Future<T> _withReconnect<T>(Future<T> Function() action) async {
     for (var attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         await _ensureConnected();
         return await action();
       } catch (e) {
-        if (!_isRetryableError(e) || attempt == maxRetries) rethrow;
+        if (!_isRetryableError(e) || attempt == maxRetries) {
+          throw _friendlyError(e);
+        }
         final delayMs = 200 * (1 << attempt);
         io.stderr.writeln(
           '[log_pilot_mcp] Connection error (attempt ${attempt + 1}/${maxRetries + 1}): '

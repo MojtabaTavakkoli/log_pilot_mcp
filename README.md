@@ -100,7 +100,9 @@ flutter run
 ```
 
 LogPilot writes the VM service URI to `.dart_tool/log_pilot_vm_service_uri`
-automatically on native platforms.
+automatically on desktop platforms. On **Android/iOS**, the device cannot
+write to the host filesystem — use `--project-root` or `write-uri` (see
+[CLI Reference](#cli-reference)).
 
 ### 4. Configure your IDE
 
@@ -330,6 +332,9 @@ data, you're connected.
 **Full restart (new debug session):**
 - **Auto-discovery mode** (no `--vm-service-uri` flag): the URI file updates
   automatically and the server reconnects on its own.
+- **Android/iOS**: the device can't update the URI file. Run
+  `log_pilot_mcp write-uri <new_ws_uri>` from the host — the server's file
+  watcher detects the change and reconnects.
 - **Manual URI mode** (`--vm-service-uri` in `mcp.json`): update the URI
   value and reload the Cursor window.
 
@@ -494,8 +499,9 @@ capture script, it reconnects automatically.
 | Server not in MCP list | Config not loaded | `Ctrl+Shift+P` → "Developer: Reload Window" |
 | `Could not find package "log_pilot_mcp"` | Package not installed | `dart pub add --dev log_pilot_mcp` |
 | `Failed to connect to VM service` | App not running or URI stale | Start the app; check if the URI file contains a valid `ws://` URI |
-| `getVM: (-32601) Unknown method` | The URI points to something that isn't a Dart VM service (stale or invalid URI) | Restart the app to regenerate the URI file. If using `--vm-service-uri`, copy a fresh URI from the debug console. |
+| `VM service not responding` / `getVM: (-32601)` | The URI is stale or the app has restarted | Restart the app to regenerate the URI file. On Android/iOS, run `log_pilot_mcp write-uri <new_ws_uri>`. If using `--vm-service-uri`, copy a fresh URI from the debug console. |
 | `No isolates found` | App's main isolate hasn't started yet | Wait and retry; auto-retries up to 3 times |
+| Auto-discovery fails on Android/iOS | The device cannot write to the host's `.dart_tool` | Use `--project-root` in your MCP config, or run `log_pilot_mcp write-uri <ws://...>` from the host machine. |
 | `LogPilot library not found and no service extensions registered` | App doesn't depend on `log_pilot` or hasn't called `init()`/`configure()` | Add `log_pilot` to pubspec.yaml and call `LogPilot.init()` or `LogPilot.configure()` |
 | `Service extensions available: false` | `init()`/`configure()` hasn't run yet | Ensure `init()` or `configure()` runs on app start. The server detects extensions as they register. |
 | "Waiting for VM service URI..." forever | Flutter Web (no `dart:io`) or missing `.dart_tool` | Pass `--vm-service-uri` directly, or add `--project-root` on Windows |
@@ -514,13 +520,20 @@ capture script, it reconnects automatically.
 ## CLI Reference
 
 ```
-dart run log_pilot_mcp [options]
+log_pilot_mcp [options]
+log_pilot_mcp write-uri <ws://...> [--project-root=PATH]
 
 Options:
   --vm-service-uri=URI        Connect to this VM service URI directly.
   --vm-service-uri-file=PATH  Read the URI from a file (watched for changes).
   --project-root=PATH         Absolute path to the Flutter app's project root.
   -h, --help                  Show usage information.
+
+Commands:
+  write-uri <URI>             Write the VM service URI to
+                              .dart_tool/log_pilot_vm_service_uri.
+                              Useful for Android/iOS where the app
+                              cannot write to the host filesystem.
 
 Environment:
   LOG_PILOT_VM_SERVICE_URI    Fallback URI when no flags are provided.

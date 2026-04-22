@@ -10,6 +10,11 @@ void main(List<String> args) {
     return;
   }
 
+  if (args.isNotEmpty && args.first == 'write-uri') {
+    _writeUri(args.skip(1).toList());
+    return;
+  }
+
   final uri = _parseArg(args, '--vm-service-uri=');
   final uriFile = _parseArg(args, '--vm-service-uri-file=');
   final projectRoot = _parseArg(args, '--project-root=');
@@ -63,7 +68,8 @@ void _printUsage() {
   io.stderr.writeln(
     'log_pilot_mcp — MCP server for log_pilot\n'
     '\n'
-    'Usage: dart run log_pilot_mcp [options]\n'
+    'Usage: log_pilot_mcp [options]\n'
+    '       log_pilot_mcp write-uri <ws://...> [--project-root=PATH]\n'
     '\n'
     'The VM service URI is printed when you run:\n'
     '  flutter run --verbose\n'
@@ -77,14 +83,101 @@ void _printUsage() {
     '                              project root. Used to locate\n'
     '                              .dart_tool/log_pilot_vm_service_uri\n'
     '                              when auto-discovery from cwd fails\n'
-    '                              (common on Windows).\n'
+    '                              (common on Windows and mobile targets).\n'
     '  -h, --help                  Show this help message.\n'
+    '\n'
+    'Commands:\n'
+    '  write-uri <URI>             Write the VM service URI to\n'
+    '                              .dart_tool/log_pilot_vm_service_uri.\n'
+    '                              Useful for Android/iOS where the app\n'
+    '                              cannot write to the host filesystem.\n'
+    '                              Use --project-root if cwd is not the\n'
+    '                              Flutter project root.\n'
     '\n'
     'Auto-discovery: If no flags are given, the server looks for\n'
     '  .dart_tool/log_pilot_vm_service_uri (written by LogPilot on init()).\n'
+    '  On Android/iOS, auto-discovery from the device is not possible —\n'
+    '  use "write-uri" or --project-root instead.\n'
     '\n'
     'You can also set the LOG_PILOT_VM_SERVICE_URI environment variable.',
   );
+
+  if (io.Platform.isWindows) {
+    final home = io.Platform.environment['LOCALAPPDATA'] ?? '';
+    io.stderr.writeln(
+      '\n'
+      'Windows: If "log_pilot_mcp" is not on your PATH after\n'
+      '  dart pub global activate, use the full path in mcp.json:\n'
+      '  $home\\Pub\\Cache\\bin\\log_pilot_mcp.bat',
+    );
+  }
+}
+
+/// Write a VM service URI to `.dart_tool/log_pilot_vm_service_uri` so
+/// the MCP server (or a running watcher) can pick it up. Intended for
+/// Android/iOS workflows where the on-device app cannot write the file.
+void _writeUri(List<String> args) {
+  final projectRoot = _parseArg(args, '--project-root=');
+  final positional = args.where((a) => !a.startsWith('--')).toList();
+
+  if (positional.isEmpty) {
+    io.stderr.writeln(
+      'Usage: log_pilot_mcp write-uri <ws://...> [--project-root=PATH]\n'
+      '\n'
+      'Example:\n'
+      '  log_pilot_mcp write-uri ws://127.0.0.1:12345/AbCdE=/ws\n'
+      '  log_pilot_mcp write-uri ws://127.0.0.1:12345/AbCdE=/ws '
+      '--project-root=D:\\MyApp',
+    );
+    io.exitCode = 1;
+    return;
+  }
+
+  final uri = positional.first;
+  if (!uri.startsWith('ws://') && !uri.startsWith('wss://')) {
+    io.stderr.writeln(
+      '[log_pilot_mcp] Warning: URI does not start with ws:// or wss:// — '
+      'writing anyway.',
+    );
+  }
+
+  final filePath = _resolveUriFileForWrite(projectRoot: projectRoot);
+  if (filePath == null) {
+    io.stderr.writeln(
+      '[log_pilot_mcp] Could not locate .dart_tool directory.\n'
+      '           Use --project-root=<APP_PATH> or run "flutter pub get" first.',
+    );
+    io.exitCode = 1;
+    return;
+  }
+
+  final file = io.File(filePath);
+  file.writeAsStringSync(uri);
+  io.stderr.writeln('[log_pilot_mcp] Wrote URI to $filePath');
+}
+
+/// Resolve the path for write-uri: uses [projectRoot] if given, otherwise
+/// searches cwd and parents for `.dart_tool`.
+String? _resolveUriFileForWrite({String? projectRoot}) {
+  if (projectRoot != null) {
+    final dartTool = io.Directory('$projectRoot/.dart_tool');
+    if (dartTool.existsSync()) {
+      return '${dartTool.path}/log_pilot_vm_service_uri';
+    }
+    return null;
+  }
+
+  var dir = io.Directory.current;
+  for (var i = 0; i < 5; i++) {
+    final dartTool = io.Directory('${dir.path}/.dart_tool');
+    if (dartTool.existsSync()) {
+      return '${dartTool.path}/log_pilot_vm_service_uri';
+    }
+    final parent = dir.parent;
+    if (parent.path == dir.path) break;
+    dir = parent;
+  }
+  return null;
 }
 
 LogPilotMcpServer? _server;
